@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3f9b8c">
+<title>نظام الشؤون الطلابية</title>
+<style>
+html,body{margin:0;height:100%;background:#eef5f3}
+iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#eef5f3}
+#nb{position:fixed;top:8px;left:8px;z-index:5;display:none;background:#3f9b8c;color:#fff;border:0;border-radius:20px;padding:8px 16px;font:700 14px Tahoma,Arial,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.25);cursor:pointer}
+#ld{position:fixed;inset:0;display:grid;place-items:center;font-family:Tahoma,Arial,sans-serif;color:#6f8a85;font-size:18px;z-index:1}
+</style>
+</head>
+<body>
+<button id="nb">🔔 تفعيل إشعارات النظام</button>
+<div id="wv" style="position:fixed;bottom:6px;left:8px;z-index:6;font:11px Tahoma,Arial,sans-serif;color:#6f8a85;background:rgba(255,255,255,.8);padding:2px 8px;border-radius:10px">واجهة v2</div>
+<div id="ld">⏳ جارٍ تحميل النظام...</div>
+<iframe id="f" allow="clipboard-write; fullscreen"></iframe>
+<script>
+var EXEC = 'https://script.google.com/macros/s/AKfycbzAQiE99m-S0q9FSTuDQNAEZ2jygRU1sq1vwFVlnuI_ybNa-_LiB9AJtAUce0LNoqGnDg/exec';
+var f = document.getElementById('f'), nb = document.getElementById('nb'), lastSrc = null;
+f.onload = function () { var l = document.getElementById('ld'); if (l) l.remove(); };
+f.src = EXEC;
+function perm() { return 'Notification' in window ? Notification.permission : 'unsupported'; }
+function tell() {
+  nb.style.display = perm() == 'default' ? 'block' : 'none';
+  if (lastSrc) { try { lastSrc.postMessage({ kind: 'wrapper', perm: perm() }, '*'); } catch (e) { } }
+}
+nb.onclick = function () { Notification.requestPermission().then(tell); };
+window.addEventListener('message', function (e) {
+  var d = e.data || {}, o = String(e.origin || '');
+  var okO = /(^|\.)(googleusercontent|google)\.com$/.test(o.replace(/^https?:\/\//, ''));
+  if (d.kind == 'hello') { lastSrc = e.source; tell(); }
+  if (d.kind == 'sys-alert' && okO && perm() == 'granted') {
+    var n = new Notification(String(d.title || ''), { body: String(d.body || ''), tag: String(d.tag || ''), dir: 'rtl', lang: 'ar' });
+    n.onclick = function () { window.focus(); n.close(); };
+  }
+});
+tell();
+setTimeout(function () { var v = document.getElementById('wv'); if (v) v.remove(); }, 6000);
+</script>
+</body>
+</html>
