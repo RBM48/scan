@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>ماسح التأخر الصباحي</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--pri:#3f9b8c;--pri2:#2c7a6e;--ink:#23403b;--mut:#6f8a85;--sh:0 12px 28px rgba(44,122,110,.16)}
+*{box-sizing:border-box;font-family:'El Messiri',Tahoma,sans-serif}
+body{margin:0;min-height:100vh;background:linear-gradient(135deg,#e6f3ef,#eef0fb);color:var(--ink)}
+.hide{display:none!important}
+.wrap{max-width:520px;margin:auto;padding:14px}
+.card{background:#fff;border-radius:22px;padding:18px;box-shadow:var(--sh);margin-bottom:14px}
+h2{margin:4px 0 12px;text-align:center}
+label{display:block;margin:10px 0 4px;color:var(--mut);font-size:13px}
+input{width:100%;padding:13px;border:2px solid #d5e6e2;border-radius:14px;font-size:16px;outline:0}
+input:focus{border-color:var(--pri)}
+.btn{border:0;padding:13px 20px;border-radius:14px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;background:linear-gradient(145deg,var(--pri),var(--pri2));box-shadow:0 5px 0 #1f5c53;width:100%;margin-top:12px}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #1f5c53}
+.btn.g{background:#9bb;box-shadow:0 5px 0 #789}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+#rd{width:100%;border-radius:18px;overflow:hidden;background:#000;min-height:240px}
+.res{padding:16px;border-radius:18px;text-align:center;font-weight:700;line-height:1.9;font-size:17px;margin:12px 0;animation:pop .25s}
+.res.ok{background:#e3f4ef;border:3px solid var(--pri);color:#1f6d5f}.res.warn{background:#fff4e5;border:3px solid #e8955a}
+.res.err{background:#fdecec;border:3px solid #e06666}.res.alert{background:#fff0f0;border:4px solid #d95c5c;color:#a32}
+.res.idle{background:#fff;border:2px dashed #cfe3de;color:var(--mut);font-weight:400}
+.row{display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #e3eeeb;font-size:14px}
+.sr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px;border-radius:14px;background:#f6fbfa;margin:6px 0;cursor:pointer;border:1px solid #e0eeea}.sr:active{background:#e3f4ef}.tg{display:inline-block;padding:2px 9px;border-radius:20px;color:#fff;font-size:12px;margin-right:4px}
+.ov{position:fixed;inset:0;background:rgba(35,64,59,.5);display:grid;place-items:center;z-index:9;padding:16px}
+.md{background:#fff;border-radius:24px;padding:22px;width:min(420px,100%);text-align:center}
+.cdw{margin-top:10px}.cdn{font-size:76px;font-weight:700;line-height:1.1}.cbar{height:10px;background:rgba(0,0,0,.1);border-radius:8px;overflow:hidden;margin-top:8px}.cbar i{display:block;height:100%;width:100%;background:currentColor;opacity:.55}.rdy{margin-top:10px;font-size:18px;color:#1f6d5f}
+@keyframes pop{from{transform:scale(.9);opacity:0}}
+</style></head><body><div class="wrap">
+
+<div id="lg" class="card hide">
+  <h2>🎓 ماسح التأخر الصباحي</h2>
+  <label>رابط النظام (من تبويب بوابة التأخر)</label><input id="u" dir="ltr" placeholder="https://script.google.com/macros/s/.../exec">
+  <label>كود الدخول</label><input id="code" type="password" onkeydown="if(event.key=='Enter')login()">
+  <p id="er" style="color:#c0392b;text-align:center;min-height:22px"></p>
+  <button class="btn" onclick="login()">دخول</button>
+  <p style="text-align:center;color:#9ab;font-size:11px;margin:10px 0 0">إصدار الماسح: s21-5</p>
+</div>
+
+<div id="ap" class="hide">
+  <header><b id="sch"></b><span><span id="usr" style="color:var(--mut);font-size:13px"></span> <button class="btn g" style="width:auto;padding:6px 14px;margin:0;font-size:13px" onclick="logout()">خروج</button></span></header>
+  <div id="rd"></div>
+  <div style="display:flex;gap:8px"><button class="btn g" id="cb" onclick="toggleCam()">⏸ إيقاف الكاميرا</button><select id="cds" onchange="setCd(this.value)" style="width:auto;margin-top:12px"><option value="0">بدون عداد</option><option value="2">عداد 2 ث</option><option value="3">عداد 3 ث</option><option value="4">عداد 4 ث</option><option value="5">عداد 5 ث</option></select><select id="snd" onchange="setSnd(this.value)" style="width:auto;margin-top:12px"><option value="both">🔊 نغمة + صوت</option><option value="tone">🎵 نغمة فقط</option><option value="voice">🗣️ صوت فقط</option><option value="mute">🔇 صامت</option></select></div>
+  <div id="res" class="res idle">وجّه الكاميرا نحو بطاقة الطالب</div>
+  <div class="card"><label style="margin-top:0">🔍 ابحث باسم الطالب أو رقمه</label><input id="mi" autocomplete="off" placeholder="اكتب جزءاً من الاسم" oninput="srch()" onkeydown="if(event.key=='Enter')manual()"><div id="sr"></div></div>
+  <div class="card"><b>آخر المسح (<span id="n">0</span>)</b><div id="ls"></div></div>
+</div>
+
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const LS = { g: k => { try { return localStorage.getItem(k) } catch (e) { return null } }, s: (k, v) => { try { localStorage.setItem(k, v) } catch (e) { } }, d: k => { try { localStorage.removeItem(k) } catch (e) { } } };
+let API = LS.g('api') || '', RT = LS.g('rt') || '', SC = null, busy = false, SEEN = {}, N = 0, CAM = false;
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const AD = s => String(s).replace(/\d/g, n => '٠١٢٣٤٥٦٧٨٩'[n]);
+const hijri = d => { const p = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(d), g = t => (p.find(x => x.type == t) || {}).value; return AD(g('year') + '/' + g('month') + '/' + g('day')) + ' هـ' };
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10) };
+const beep = f => { try { const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(); o.frequency.value = f; o.connect(a.destination); o.start(); setTimeout(() => { o.stop(); a.close() }, 140) } catch (e) { } };
+function tone(k) {
+  try {
+    const a = new (window.AudioContext || window.webkitAudioContext)(); let t = a.currentTime;
+    const seq = { ok: [[880, .15]], warn: [[520, .11], [0, .09], [520, .11]], alert: [[700, .14], [1000, .24]], err: [[220, .45]] }[k] || [[660, .12]];
+    seq.forEach(([f, d]) => { if (f) { const o = a.createOscillator(), g = a.createGain(); o.type = k == 'err' ? 'square' : 'sine'; o.frequency.value = f; g.gain.value = k == 'err' ? .15 : .35; o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d) } t += d });
+    setTimeout(() => a.close(), (t - a.currentTime) * 1000 + 250);
+  } catch (e) { }
+}
+let SND = (() => { try { return localStorage.getItem('snd') || 'both' } catch (e) { return 'both' } })();
+function setSnd(v) { SND = v; try { localStorage.setItem('snd', v) } catch (e) { } if (v == 'both' || v == 'voice') speak('ok') }
+const PH = { ok: ['تم', 'OK'], warn: ['سجل مسبقاً', 'Already registered'], alert: ['تنبيه، تكرار التأخر', 'Warning'], err: ['خطأ', 'Error'] };
+function speak(k) {
+  try {
+    const s = window.speechSynthesis; if (!s) return; s.cancel();
+    const vs = s.getVoices(), ar = !vs.length || vs.some(v => /^ar/i.test(v.lang)), u = new SpeechSynthesisUtterance((PH[k] || PH.ok)[ar ? 0 : 1]);
+    u.lang = ar ? 'ar-SA' : 'en-US'; const v = vs.find(v => v.lang.toLowerCase().startsWith(u.lang.slice(0, 2))); if (v) u.voice = v; u.rate = 1.05; s.speak(u);
+  } catch (e) { }
+}
+function sound(k) { if (SND == 'mute') return; if (SND != 'voice') tone(k); if (SND != 'tone') setTimeout(() => speak(k), SND == 'both' ? 350 : 0) }
+document.addEventListener('click', () => { try { const s = window.speechSynthesis; if (s) s.speak(new SpeechSynthesisUtterance('')) } catch (e) { } }, { once: true });
+
+/* اتصال JSONP: لا يتأثر بقيود CORS */
+function api(o) {
+  return new Promise((ok, no) => {
+    const cb = 'cb' + Math.random().toString(36).slice(2), el = document.createElement('script');
+    const done = () => { clearTimeout(t); delete window[cb]; el.remove() };
+    const t = setTimeout(() => { done(); no(new Error('NET')) }, 20000);
+    window[cb] = d => { done(); ok(d) }; el.onerror = () => { done(); no(new Error('NET')) };
+    el.src = API + (API.includes('?') ? '&' : '?') + 'api=1&cb=' + cb + '&p=' + encodeURIComponent(JSON.stringify(o));
+    document.head.appendChild(el);
+  });
+}
+const why = e => 'تعذّر الاتصال بالنظام. تأكد أن الرابط كامل وينتهي بـ /exec، وأنك نشرت الإصدار الجديد من Apps Script (نشر ← إدارة عمليات النشر ← إصدار جديد)، وأن «من لديه حق الوصول» = «أي شخص».';
+function loadLib(urls) { return new Promise((ok, no) => { const t = i => { if (i >= urls.length) return no(new Error('تعذر تحميل مكتبة المسح، تحقق من الاتصال')); const s = document.createElement('script'); s.src = urls[i]; s.onload = ok; s.onerror = () => t(i + 1); document.head.appendChild(s) }; t(0) }) }
+
+async function login() {
+  $('er').textContent = ''; API = $('u').value.trim(); if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(API)) return $('er').textContent = 'رابط النظام غير صحيح (يجب أن ينتهي بـ /exec)';
+  try { const r = await api({ a: 'login', code: $('code').value }); if (r.err) return $('er').textContent = r.err;
+    RT = r.rt; LS.s('api', API); LS.s('rt', RT); show(r) } catch (e) { $('er').textContent = why(e) }
+}
+async function boot() {
+  $('u').value = API;
+  let why2 = '';
+  if (API && RT) { try { const r = await api({ a: 'who', rt: RT }); if (!r.err) return show(r); why2 = r.err } catch (e) { why2 = 'تعذّر الاتصال بالنظام' } }
+  else if (!API) why2 = 'لم يصل رابط النظام'; else why2 = 'لم تصل جلسة الدخول من النظام (' + (window.HINFO || '') + ')';
+  $('lg').classList.remove('hide'); if (why2) $('er').textContent = 'الدخول التلقائي لم يعمل [s21-5]: ' + why2;
+}
+let SL = [], DONE = {};
+const nrm = s => String(s).replace(/[\u064B-\u0652ـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').toLowerCase();
+async function loadSt() { try { const r = await api({ a: 'students', rt: RT }); if (r.err) return; SL = r.students; DONE = {}; r.today.forEach(x => DONE[x.id] = x.time) } catch (e) { } }
+function srch() {
+  const q = nrm($('mi').value.trim()); if (!q) { $('sr').innerHTML = ''; return }
+  if (!SL.length) { $('sr').innerHTML = '<p style="color:var(--mut)">جارٍ تحميل قائمة الطلاب… أو تعذّر تحميلها، أعد فتح الصفحة.</p>'; return }
+  const isD = /^\d+$/.test(q); if (isD && q.length < 3) { $('sr').innerHTML = ''; return }
+  const L = SL.filter(s => isD ? s.id.includes(q) : nrm(s.name).includes(q)).slice(0, 8);
+  $('sr').innerHTML = L.map(s => `<div class="sr" onclick="pick('${s.id}')"><div><b>${esc(s.name)}</b><div style="font-size:12px;color:var(--mut)">${esc(s.cls)} • ${esc(s.id)}</div></div><div>${DONE[s.id] ? `<span class="tg" style="background:#3f9b8c">✔ ${esc(DONE[s.id])}</span>` : s.ab ? '<span class="tg" style="background:#c0392b">غائب</span>' : ''}${s.lc ? `<span class="tg" style="background:#e0a43a">ت ${s.lc}</span>` : ''}</div></div>`).join('') || '<p style="color:var(--mut)">لا توجد نتائج</p>';
+}
+function pick(id) { if (busy) return; $('mi').value = ''; $('sr').innerHTML = ''; SEEN = {}; busy = true; mark(id).finally(() => busy = false) }
+function manual() { const v = $('mi').value.trim(), ex = SL.find(s => s.id == v); if (ex) return pick(ex.id); const q = nrm(v), L = SL.filter(s => nrm(s.name).includes(q)); if (L.length == 1) pick(L[0].id) }
+let CD = LS.g('cd') === null ? 3 : +LS.g('cd'), cooling = false, CT = null;
+function setCd(v) { CD = +v; LS.s('cd', CD) }
+function startCool() {
+  if (!CD) return; clearInterval(CT); cooling = true; let n = CD;
+  const w = document.createElement('div'); w.className = 'cdw'; w.id = 'cdw'; w.innerHTML = `<div class="cdn" id="cdn">${n}</div><div>ثوانٍ حتى الطالب التالي</div><div class="cbar"><i id="cbi" style="transition:width ${CD}s linear"></i></div>`;
+  $('res').appendChild(w); setTimeout(() => { const b = $('cbi'); if (b) b.style.width = '0%' }, 40);
+  CT = setInterval(() => { n--; if (n > 0) { const e = $('cdn'); if (e) e.textContent = n; return } clearInterval(CT); cooling = false; const x = $('cdw'); if (x) x.innerHTML = '<div class="rdy">✅ جاهز للطالب التالي</div>'; beep(660) }, 1000);
+}
+function show(r) {
+  setTimeout(() => { if (LS.g('rt') !== RT) { $('res').className = 'res warn'; $('res').innerHTML = '⚠️ هذا المتصفح لا يحفظ الجلسة (وضع تصفح خاص أو حجب لتخزين الموقع)، فستُطلب منك كتابة الكود في كل مرة. جرّب متصفحاً عادياً أو أضف الصفحة للشاشة الرئيسية ثم ادخل منها.' } }, 1500); $('lg').classList.add('hide'); $('ap').classList.remove('hide'); $('sch').textContent = '🎓 ' + (r.school || ''); $('usr').textContent = r.name || ''; $('cds').value = String(CD); $('snd').value = SND; startCam(); loadSt() }
+function logout() { stopCam(); LS.d('rt'); RT = ''; $('ap').classList.add('hide'); $('lg').classList.remove('hide') }
+
+async function startCam() {
+  try {
+    if (!window.Html5Qrcode) await loadLib(['https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js', 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js']);
+    SC = SC || new Html5Qrcode('rd');
+    await SC.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 240, height: 240 } }, onScan, () => { });
+    CAM = true; $('cb').textContent = '⏸ إيقاف الكاميرا';
+  } catch (e) { CAM = false; $('cb').textContent = '▶ تشغيل الكاميرا'; banner('err', 'تعذّر تشغيل الكاميرا.<br>اسمح للمتصفح باستخدام الكاميرا لهذه الصفحة ثم اضغط «تشغيل الكاميرا».') }
+}
+async function stopCam() { try { if (SC && CAM) await SC.stop() } catch (e) { } CAM = false; if ($('cb')) $('cb').textContent = '▶ تشغيل الكاميرا' }
+function toggleCam() { CAM ? stopCam() : startCam() }
+
+function banner(k, t) { $('res').className = 'res ' + k; $('res').innerHTML = t; sound(k); if (navigator.vibrate) navigator.vibrate({ ok: 60, warn: [60, 60, 60], alert: [100, 50, 250], err: 350 }[k] || 60) }
+async function onScan(text) {
+  text = String(text).trim(); if (busy || cooling || !text) return;
+  if (SEEN[text] && Date.now() - SEEN[text] < 6000) return; SEEN[text] = Date.now();
+  busy = true; try { if ((await mark(text)) !== 'absent') startCool() } finally { busy = false }
+}
+async function mark(id, force) {
+  let r; try { r = await api({ a: 'scan', rt: RT, id: id, force: !!force, date: today(), hijri: hijri(new Date()) }) } catch (e) { return banner('err', esc(why(e))) }
+  if (r.err) { if (/انتهت الجلسة/.test(r.err)) { banner('err', 'انتهت الجلسة، سجّل الدخول من جديد'); return logout() } return banner('err', esc(r.err)) }
+  if (r.absent) { ask(r); return 'absent' }
+  if (r.dup) { DONE[r.id] = r.time; return banner('warn', `${esc(r.name)}<br>سُجِّل متأخراً مسبقاً اليوم الساعة ${esc(r.time)}`) }
+  N++; $('n').textContent = N; DONE[r.id] = r.time; const st = SL.find(z => z.id == r.id); if (st) { st.lc = r.late; st.ab = 0 }
+  banner(r.late >= 3 ? 'alert' : 'ok', `✔ ${esc(r.name)}<br>${esc(r.cls)} • ${esc(r.time)}<br>تأخره رقم ${r.late}${r.late >= 3 ? ' ⚠️' : ''}`);
+  $('ls').insertAdjacentHTML('afterbegin', `<div class="row"><span>${esc(r.name)}</span><span>${esc(r.time)} • ت${r.late}</span></div>`);
+  while ($('ls').children.length > 12) $('ls').lastChild.remove();
+}
+function ask(r) {
+  const o = document.createElement('div'); o.className = 'ov';
+  o.innerHTML = `<div class="md"><div style="font-size:40px">❓</div><h3>${esc(r.name)}</h3><p>مسجّل <b>غائباً</b> اليوم. هل حضر متأخراً؟</p><button class="btn" id="y">نعم، حوّله إلى متأخر</button><button class="btn g" id="x">إلغاء</button></div>`;
+  document.body.appendChild(o); busy = true;
+  o.querySelector('#x').onclick = () => { o.remove(); busy = false };
+  o.querySelector('#y').onclick = async () => { o.remove(); try { await mark(r.id, true); startCool() } finally { busy = false } };
+}
+/* بيانات الدخول القادمة من النظام عبر الرابط (#u=...&rt=...) */
+(function () {
+  const hs = location.hash.slice(1); window.HINFO = hs ? 'وصل رابط بيانات' : 'فُتحت الصفحة دون بيانات من النظام'; if (!hs) return;
+  const p = new URLSearchParams(hs), u = p.get('u'), rt = p.get('rt'); window.HINFO = 'وصل رابط: النظام ' + (u ? 'نعم' : 'لا') + '، الجلسة ' + (rt ? 'طولها ' + rt.length : 'لا');
+  if (u && /^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(u)) { API = u; LS.s('api', u) }
+  if (rt && /^[a-f0-9]{40}$/.test(rt)) { RT = rt; LS.s('rt', rt) }
+  try { history.replaceState(null, '', location.pathname + location.search) } catch (e) { }
+})();
+boot();
+</script></body></html>
