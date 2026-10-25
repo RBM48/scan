@@ -21,7 +21,7 @@ input:focus{border-color:var(--pri)}
 header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
 #rd{width:100%;border-radius:18px;overflow:hidden;background:#000;min-height:240px}
 .res{padding:16px;border-radius:18px;text-align:center;font-weight:700;line-height:1.9;font-size:17px;margin:12px 0;animation:pop .25s}
-.res.ok{background:#e3f4ef;border:3px solid var(--pri);color:#1f6d5f}.res.warn{background:#fff4e5;border:3px solid #e8955a}
+.res.ok{background:#e3f4ef;border:3px solid var(--pri);color:#1f6d5f}.res.warn,.res.del{background:#fff4e5;border:3px solid #e8955a}
 .res.err{background:#fdecec;border:3px solid #e06666}.res.alert{background:#fff0f0;border:4px solid #d95c5c;color:#a32}
 .res.idle{background:#fff;border:2px dashed #cfe3de;color:var(--mut);font-weight:400}
 .del{background:none;border:0;cursor:pointer;font-size:17px;padding:2px 6px}.row{display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #e3eeeb;font-size:14px}
@@ -38,7 +38,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:8px;mar
   <label>كود الدخول</label><input id="code" type="password" onkeydown="if(event.key=='Enter')login()">
   <p id="er" style="color:#c0392b;text-align:center;min-height:22px"></p>
   <button class="btn" onclick="login()">دخول</button>
-  <p style="text-align:center;color:#9ab;font-size:11px;margin:10px 0 0">إصدار الماسح: s21-10</p>
+  <p style="text-align:center;color:#9ab;font-size:11px;margin:10px 0 0">إصدار الماسح: s21-11</p>
 </div>
 
 <div id="ap" class="hide">
@@ -70,7 +70,7 @@ function tone(k) {
 }
 let SND = (() => { try { return localStorage.getItem('snd') || 'both' } catch (e) { return 'both' } })();
 function setSnd(v) { SND = v; try { localStorage.setItem('snd', v) } catch (e) { } if (v == 'both' || v == 'voice') speak('ok') }
-const PH = { ok: ['تم', 'OK'], warn: ['سجل مسبقاً', 'Already registered'], alert: ['تنبيه، تكرار التأخر', 'Warning'], err: ['خطأ', 'Error'] };
+const PH = { del: ['تم الحذف', 'Deleted'], ok: ['تم', 'OK'], warn: ['سجل مسبقاً', 'Already registered'], alert: ['تنبيه، تكرار التأخر', 'Warning'], err: ['خطأ', 'Error'] };
 function speak(k) {
   try {
     const s = window.speechSynthesis; if (!s) return; s.cancel();
@@ -106,7 +106,7 @@ async function boot() {
   let why2 = '';
   if (API && RT) { try { const r = await api({ a: 'who', rt: RT }); if (!r.err) return show(r); why2 = errTxt(r.err) } catch (e) { why2 = 'تعذّر الاتصال بالنظام' } }
   else if (!API) why2 = 'لم يصل رابط النظام'; else why2 = 'لم تصل جلسة الدخول من النظام (' + (window.HINFO || '') + ')';
-  $('lg').classList.remove('hide'); if (why2) $('er').textContent = 'الدخول التلقائي لم يعمل [s21-10]: ' + why2;
+  $('lg').classList.remove('hide'); if (why2) $('er').textContent = 'الدخول التلقائي لم يعمل [s21-11]: ' + why2;
 }
 let SL = [], DONE = {};
 const nrm = s => String(s).replace(/[\u064B-\u0652ـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').toLowerCase();
@@ -117,12 +117,12 @@ function drawLs() {
 async function del(id) {
   const x = TD.find(z => z.id == id); if (!x || DELB) return;
   if (!confirm('حذف تسجيل تأخر «' + x.name + '» اليوم؟')) return;
-  DELB = true; LASTDEL = Date.now();
+  DELB = true;
   try {
     const r = await api({ a: 'undo', rt: RT, id: id, date: today() });
     if (r.err) { if (/انتهت الجلسة/.test(r.err)) { banner('err', 'انتهت الجلسة، سجّل الدخول من جديد'); return logout() } return banner('err', esc(errTxt(r.err))) }
-    SEEN[id] = Date.now() + 9000; await loadSt(); LASTDEL = Date.now();
-    if (TD.some(z => z.id == id)) banner('err', '⚠️ ما زال الطالب مسجَّلاً في السجل بعد الحذف<br>' + esc(x.name) + '<br>أعد المحاولة أو راجع شيت السجل'); else banner('warn', '🗑️ حُذف تسجيل التأخر<br>' + esc(x.name) + (r.n > 1 ? '<br>(حُذف ' + r.n + ' تسجيلات مكررة)' : ''));
+    SEEN[id] = Date.now() + 9000; await loadSt();
+    if (TD.some(z => z.id == id)) banner('err', '⚠️ ما زال الطالب مسجَّلاً في السجل بعد الحذف<br>' + esc(x.name) + '<br>أعد المحاولة أو راجع شيت السجل'); else banner('del', '🗑️ حُذف تسجيل التأخر<br>' + esc(x.name) + (r.n > 1 ? '<br>(حُذف ' + r.n + ' تسجيلات مكررة)' : ''));
   } catch (e) { banner('err', esc(why(e))) } finally { DELB = false }
 }
 async function loadSt() { try { const r = await api({ a: 'students', rt: RT }); if (r.err) return; SL = r.students; DONE = {}; TD = r.today.slice(); r.today.forEach(x => DONE[x.id] = x.time); drawLs() } catch (e) { } }
@@ -133,7 +133,7 @@ function srch() {
   const L = SL.filter(s => isD ? s.id.includes(q) : nrm(s.name).includes(q)).slice(0, 8);
   $('sr').innerHTML = L.map(s => `<div class="sr" onclick="pick('${s.id}')"><div><b>${esc(s.name)}</b><div style="font-size:12px;color:var(--mut)">${esc(s.cls)} • ${esc(s.id)}</div></div><div>${DONE[s.id] ? `<span class="tg" style="background:#3f9b8c">✔ ${esc(DONE[s.id])}</span>` : s.ab ? '<span class="tg" style="background:#c0392b">غائب</span>' : ''}${s.lc ? `<span class="tg" style="background:#e0a43a">ت ${s.lc}</span>` : ''}</div></div>`).join('') || '<p style="color:var(--mut)">لا توجد نتائج</p>';
 }
-function pick(id) { if (busy) return; $('mi').value = ''; $('sr').innerHTML = ''; SEEN = {}; busy = true; mark(id, false, '🔍 البحث').finally(() => busy = false) }
+function pick(id) { if (busy) return; $('mi').value = ''; $('sr').innerHTML = ''; SEEN = {}; busy = true; mark(id).finally(() => busy = false) }
 function manual() { const v = $('mi').value.trim(), ex = SL.find(s => s.id == v); if (ex) return pick(ex.id); const q = nrm(v), L = SL.filter(s => nrm(s.name).includes(q)); if (L.length == 1) pick(L[0].id) }
 let CD = LS.g('cd') === null ? 3 : +LS.g('cd'), cooling = false, CT = null;
 function setCd(v) { CD = +v; LS.s('cd', CD) }
@@ -158,20 +158,19 @@ async function startCam() {
 async function stopCam() { try { if (SC && CAM) await SC.stop() } catch (e) { } CAM = false; if ($('cb')) $('cb').textContent = '▶ تشغيل الكاميرا' }
 function toggleCam() { CAM ? stopCam() : startCam() }
 
-let HT = null, HS = 6, LASTDEL = 0;
+let HT = null, HS = 6;
 function idleRes() { if (cooling) { HT = setTimeout(idleRes, 1000); return } $('res').className = 'res idle'; $('res').textContent = 'وجّه الكاميرا نحو بطاقة الطالب' }
 function banner(k, t) { $('res').className = 'res ' + k; $('res').innerHTML = t; clearTimeout(HT); if (HS > 0) HT = setTimeout(idleRes, (k == 'err' || k == 'alert' ? Math.max(HS, 8) : HS) * 1000); sound(k); if (navigator.vibrate) navigator.vibrate({ ok: 60, warn: [60, 60, 60], alert: [100, 50, 250], err: 350 }[k] || 60) }
 async function onScan(text) {
   text = String(text).trim(); if (busy || cooling || !text) return;
   if (SEEN[text] && Date.now() - SEEN[text] < 6000) return; SEEN[text] = Date.now();
-  busy = true; try { if ((await mark(text, false, '📷 الكاميرا')) !== 'absent') startCool() } finally { busy = false }
+  busy = true; try { if ((await mark(text)) !== 'absent') startCool() } finally { busy = false }
 }
-async function mark(id, force, src) {
-  if (Date.now() - LASTDEL < 2500) return;
+async function mark(id, force) {
   let r; try { r = await api({ a: 'scan', rt: RT, id: id, force: !!force, date: today(), hijri: hijri(new Date()) }) } catch (e) { return banner('err', esc(why(e))) }
   if (r.err) { if (/انتهت الجلسة/.test(r.err)) { banner('err', 'انتهت الجلسة، سجّل الدخول من جديد'); return logout() } return banner('err', esc(errTxt(r.err))) }
   if (r.absent) { ask(r); return 'absent' }
-  if (r.dup) { DONE[r.id] = r.time; return banner('warn', `${esc(r.name)}<br>سُجِّل متأخراً مسبقاً اليوم الساعة ${esc(r.time)}${r.by ? '<br>بواسطة: ' + esc(r.by) : ''}<br><small style="font-weight:400">(الطلب جاء من: ${esc(src || '؟')})</small>`) }
+  if (r.dup) { DONE[r.id] = r.time; return banner('warn', `${esc(r.name)}<br>سُجِّل متأخراً مسبقاً اليوم الساعة ${esc(r.time)}${r.by ? '<br>بواسطة: ' + esc(r.by) : ''}`) }
   DONE[r.id] = r.time; TD = TD.filter(z => z.id != r.id); TD.unshift({ id: r.id, name: r.name, cls: r.cls, time: r.time }); const st = SL.find(z => z.id == r.id); if (st) { st.lc = r.late; st.ab = 0 }
   banner(r.late >= 3 ? 'alert' : 'ok', `✔ ${esc(r.name)}<br>${esc(r.cls)} • ${esc(r.time)}<br>تأخره رقم ${r.late}${r.late >= 3 ? ' ⚠️' : ''}`);
   drawLs();
@@ -181,7 +180,7 @@ function ask(r) {
   o.innerHTML = `<div class="md"><div style="font-size:40px">❓</div><h3>${esc(r.name)}</h3><p>مسجّل <b>غائباً</b> اليوم. هل حضر متأخراً؟</p><button class="btn" id="y">نعم، حوّله إلى متأخر</button><button class="btn g" id="x">إلغاء</button></div>`;
   document.body.appendChild(o); busy = true;
   o.querySelector('#x').onclick = () => { o.remove(); busy = false };
-  o.querySelector('#y').onclick = async () => { o.remove(); try { await mark(r.id, true, 'تحويل من غائب'); startCool() } finally { busy = false } };
+  o.querySelector('#y').onclick = async () => { o.remove(); try { await mark(r.id, true); startCool() } finally { busy = false } };
 }
 /* بيانات الدخول القادمة من النظام عبر الرابط (#u=...&rt=...) */
 (function () {
