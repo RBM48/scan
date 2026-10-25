@@ -24,7 +24,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:8px;mar
 .res.ok{background:#e3f4ef;border:3px solid var(--pri);color:#1f6d5f}.res.warn{background:#fff4e5;border:3px solid #e8955a}
 .res.err{background:#fdecec;border:3px solid #e06666}.res.alert{background:#fff0f0;border:4px solid #d95c5c;color:#a32}
 .res.idle{background:#fff;border:2px dashed #cfe3de;color:var(--mut);font-weight:400}
-.row{display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #e3eeeb;font-size:14px}
+.del{background:none;border:0;cursor:pointer;font-size:17px;padding:2px 6px}.row{display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #e3eeeb;font-size:14px}
 .sr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px;border-radius:14px;background:#f6fbfa;margin:6px 0;cursor:pointer;border:1px solid #e0eeea}.sr:active{background:#e3f4ef}.tg{display:inline-block;padding:2px 9px;border-radius:20px;color:#fff;font-size:12px;margin-right:4px}
 .ov{position:fixed;inset:0;background:rgba(35,64,59,.5);display:grid;place-items:center;z-index:9;padding:16px}
 .md{background:#fff;border-radius:24px;padding:22px;width:min(420px,100%);text-align:center}
@@ -38,7 +38,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:8px;mar
   <label>كود الدخول</label><input id="code" type="password" onkeydown="if(event.key=='Enter')login()">
   <p id="er" style="color:#c0392b;text-align:center;min-height:22px"></p>
   <button class="btn" onclick="login()">دخول</button>
-  <p style="text-align:center;color:#9ab;font-size:11px;margin:10px 0 0">إصدار الماسح: s21-5</p>
+  <p style="text-align:center;color:#9ab;font-size:11px;margin:10px 0 0">إصدار الماسح: s21-6</p>
 </div>
 
 <div id="ap" class="hide">
@@ -47,14 +47,14 @@ header{display:flex;justify-content:space-between;align-items:center;gap:8px;mar
   <div style="display:flex;gap:8px"><button class="btn g" id="cb" onclick="toggleCam()">⏸ إيقاف الكاميرا</button><select id="cds" onchange="setCd(this.value)" style="width:auto;margin-top:12px"><option value="0">بدون عداد</option><option value="2">عداد 2 ث</option><option value="3">عداد 3 ث</option><option value="4">عداد 4 ث</option><option value="5">عداد 5 ث</option></select><select id="snd" onchange="setSnd(this.value)" style="width:auto;margin-top:12px"><option value="both">🔊 نغمة + صوت</option><option value="tone">🎵 نغمة فقط</option><option value="voice">🗣️ صوت فقط</option><option value="mute">🔇 صامت</option></select></div>
   <div id="res" class="res idle">وجّه الكاميرا نحو بطاقة الطالب</div>
   <div class="card"><label style="margin-top:0">🔍 ابحث باسم الطالب أو رقمه</label><input id="mi" autocomplete="off" placeholder="اكتب جزءاً من الاسم" oninput="srch()" onkeydown="if(event.key=='Enter')manual()"><div id="sr"></div></div>
-  <div class="card"><b>آخر المسح (<span id="n">0</span>)</b><div id="ls"></div></div>
+  <div class="card"><b>المتأخرون اليوم (<span id="n">0</span>)</b><div id="ls" style="max-height:45vh;overflow:auto"></div></div>
 </div>
 
 </div>
 <script>
 const $ = id => document.getElementById(id);
 const LS = { g: k => { try { return localStorage.getItem(k) } catch (e) { return null } }, s: (k, v) => { try { localStorage.setItem(k, v) } catch (e) { } }, d: k => { try { localStorage.removeItem(k) } catch (e) { } } };
-let API = LS.g('api') || '', RT = LS.g('rt') || '', SC = null, busy = false, SEEN = {}, N = 0, CAM = false;
+let API = LS.g('api') || '', RT = LS.g('rt') || '', SC = null, busy = false, SEEN = {}, N = 0, CAM = false, TD = [], DELB = false;
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const AD = s => String(s).replace(/\d/g, n => '٠١٢٣٤٥٦٧٨٩'[n]);
 const hijri = d => { const p = new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(d), g = t => (p.find(x => x.type == t) || {}).value; return AD(g('year') + '/' + g('month') + '/' + g('day')) + ' هـ' };
@@ -92,24 +92,40 @@ function api(o) {
     document.head.appendChild(el);
   });
 }
+const errTxt = e => e === 'MAINT' ? 'النظام تحت الصيانة حالياً، حاول لاحقاً' : e;
 const why = e => 'تعذّر الاتصال بالنظام. تأكد أن الرابط كامل وينتهي بـ /exec، وأنك نشرت الإصدار الجديد من Apps Script (نشر ← إدارة عمليات النشر ← إصدار جديد)، وأن «من لديه حق الوصول» = «أي شخص».';
 function loadLib(urls) { return new Promise((ok, no) => { const t = i => { if (i >= urls.length) return no(new Error('تعذر تحميل مكتبة المسح، تحقق من الاتصال')); const s = document.createElement('script'); s.src = urls[i]; s.onload = ok; s.onerror = () => t(i + 1); document.head.appendChild(s) }; t(0) }) }
 
 async function login() {
   $('er').textContent = ''; API = $('u').value.trim(); if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(API)) return $('er').textContent = 'رابط النظام غير صحيح (يجب أن ينتهي بـ /exec)';
-  try { const r = await api({ a: 'login', code: $('code').value }); if (r.err) return $('er').textContent = r.err;
+  try { const r = await api({ a: 'login', code: $('code').value }); if (r.err) return $('er').textContent = errTxt(r.err);
     RT = r.rt; LS.s('api', API); LS.s('rt', RT); show(r) } catch (e) { $('er').textContent = why(e) }
 }
 async function boot() {
   $('u').value = API;
   let why2 = '';
-  if (API && RT) { try { const r = await api({ a: 'who', rt: RT }); if (!r.err) return show(r); why2 = r.err } catch (e) { why2 = 'تعذّر الاتصال بالنظام' } }
+  if (API && RT) { try { const r = await api({ a: 'who', rt: RT }); if (!r.err) return show(r); why2 = errTxt(r.err) } catch (e) { why2 = 'تعذّر الاتصال بالنظام' } }
   else if (!API) why2 = 'لم يصل رابط النظام'; else why2 = 'لم تصل جلسة الدخول من النظام (' + (window.HINFO || '') + ')';
-  $('lg').classList.remove('hide'); if (why2) $('er').textContent = 'الدخول التلقائي لم يعمل [s21-5]: ' + why2;
+  $('lg').classList.remove('hide'); if (why2) $('er').textContent = 'الدخول التلقائي لم يعمل [s21-6]: ' + why2;
 }
 let SL = [], DONE = {};
 const nrm = s => String(s).replace(/[\u064B-\u0652ـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').toLowerCase();
-async function loadSt() { try { const r = await api({ a: 'students', rt: RT }); if (r.err) return; SL = r.students; DONE = {}; r.today.forEach(x => DONE[x.id] = x.time) } catch (e) { } }
+function drawLs() {
+  N = TD.length; $('n').textContent = N;
+  $('ls').innerHTML = TD.map(x => { const st = SL.find(z => z.id == x.id); return `<div class="row"><span>${esc(x.name)} <small style="color:var(--mut)">${esc(x.cls || '')}</small></span><span>${esc(x.time)}${st && st.lc ? ' • ت' + st.lc : ''} <button class="del" title="حذف تسجيل التأخر" onclick="del('${esc(x.id)}')">🗑️</button></span></div>` }).join('') || '<p style="text-align:center;color:var(--mut)">لا يوجد متأخرون مسجلون اليوم</p>';
+}
+async function del(id) {
+  const x = TD.find(z => z.id == id); if (!x || DELB) return;
+  if (!confirm('حذف تسجيل تأخر «' + x.name + '» اليوم؟')) return;
+  DELB = true;
+  try {
+    const r = await api({ a: 'undo', rt: RT, id: id, date: today() });
+    if (r.err) { if (/انتهت الجلسة/.test(r.err)) { banner('err', 'انتهت الجلسة، سجّل الدخول من جديد'); return logout() } return banner('err', esc(errTxt(r.err))) }
+    TD = TD.filter(z => z.id != id); delete DONE[id]; delete SEEN[id]; const st = SL.find(z => z.id == id); if (st && st.lc > 0) st.lc--;
+    drawLs(); banner('warn', '🗑️ حُذف تسجيل التأخر<br>' + esc(x.name));
+  } catch (e) { banner('err', esc(why(e))) } finally { DELB = false }
+}
+async function loadSt() { try { const r = await api({ a: 'students', rt: RT }); if (r.err) return; SL = r.students; DONE = {}; TD = r.today.slice(); r.today.forEach(x => DONE[x.id] = x.time); drawLs() } catch (e) { } }
 function srch() {
   const q = nrm($('mi').value.trim()); if (!q) { $('sr').innerHTML = ''; return }
   if (!SL.length) { $('sr').innerHTML = '<p style="color:var(--mut)">جارٍ تحميل قائمة الطلاب… أو تعذّر تحميلها، أعد فتح الصفحة.</p>'; return }
@@ -150,13 +166,12 @@ async function onScan(text) {
 }
 async function mark(id, force) {
   let r; try { r = await api({ a: 'scan', rt: RT, id: id, force: !!force, date: today(), hijri: hijri(new Date()) }) } catch (e) { return banner('err', esc(why(e))) }
-  if (r.err) { if (/انتهت الجلسة/.test(r.err)) { banner('err', 'انتهت الجلسة، سجّل الدخول من جديد'); return logout() } return banner('err', esc(r.err)) }
+  if (r.err) { if (/انتهت الجلسة/.test(r.err)) { banner('err', 'انتهت الجلسة، سجّل الدخول من جديد'); return logout() } return banner('err', esc(errTxt(r.err))) }
   if (r.absent) { ask(r); return 'absent' }
   if (r.dup) { DONE[r.id] = r.time; return banner('warn', `${esc(r.name)}<br>سُجِّل متأخراً مسبقاً اليوم الساعة ${esc(r.time)}`) }
-  N++; $('n').textContent = N; DONE[r.id] = r.time; const st = SL.find(z => z.id == r.id); if (st) { st.lc = r.late; st.ab = 0 }
+  DONE[r.id] = r.time; TD = TD.filter(z => z.id != r.id); TD.unshift({ id: r.id, name: r.name, cls: r.cls, time: r.time }); const st = SL.find(z => z.id == r.id); if (st) { st.lc = r.late; st.ab = 0 }
   banner(r.late >= 3 ? 'alert' : 'ok', `✔ ${esc(r.name)}<br>${esc(r.cls)} • ${esc(r.time)}<br>تأخره رقم ${r.late}${r.late >= 3 ? ' ⚠️' : ''}`);
-  $('ls').insertAdjacentHTML('afterbegin', `<div class="row"><span>${esc(r.name)}</span><span>${esc(r.time)} • ت${r.late}</span></div>`);
-  while ($('ls').children.length > 12) $('ls').lastChild.remove();
+  drawLs();
 }
 function ask(r) {
   const o = document.createElement('div'); o.className = 'ov';
