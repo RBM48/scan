@@ -14,17 +14,19 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#eef5f3
 </head>
 <body>
 <button id="nb">🔔 تفعيل إشعارات النظام</button>
-<div id="wv" style="position:fixed;bottom:6px;left:8px;z-index:6;font:11px Tahoma,Arial,sans-serif;color:#6f8a85;background:rgba(255,255,255,.8);padding:2px 8px;border-radius:10px">واجهة v2</div>
+<div id="wv" style="position:fixed;bottom:6px;left:8px;z-index:6;font:11px Tahoma,Arial,sans-serif;color:#6f8a85;background:rgba(255,255,255,.8);padding:2px 8px;border-radius:10px">واجهة v3 · تدعم روابط الأعذار</div>
 <div id="ld">⏳ جارٍ تحميل النظام...</div>
 <iframe id="f" allow="clipboard-write; fullscreen"></iframe>
 <script>
 var EXEC = 'https://script.google.com/macros/s/AKfycbzAQiE99m-S0q9FSTuDQNAEZ2jygRU1sq1vwFVlnuI_ybNa-_LiB9AJtAUce0LNoqGnDg/exec';
 var f = document.getElementById('f'), nb = document.getElementById('nb'), lastSrc = null;
 f.onload = function () { var l = document.getElementById('ld'); if (l) l.remove(); };
-f.src = EXEC;
+var Q = location.search || '', PAR = /[?&]t=/.test(Q);
+f.src = EXEC + Q;
+if (PAR) { document.title = 'إفادة ولي أمر الطالب'; var wv0 = document.getElementById('wv'); if (wv0) wv0.remove(); }
 function perm() { return 'Notification' in window ? Notification.permission : 'unsupported'; }
 function tell() {
-  nb.style.display = perm() == 'default' ? 'block' : 'none';
+  nb.style.display = (!PAR && perm() == 'default') ? 'block' : 'none';
   if (lastSrc) { try { lastSrc.postMessage({ kind: 'wrapper', perm: perm() }, '*'); } catch (e) { } }
 }
 nb.onclick = function () { Notification.requestPermission().then(tell); };
