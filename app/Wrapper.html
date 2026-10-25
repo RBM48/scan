@@ -14,29 +14,33 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#eef5f3
 </head>
 <body>
 <button id="nb">🔔 تفعيل إشعارات النظام</button>
+<div id="wv" style="position:fixed;bottom:6px;left:8px;z-index:6;font:11px Tahoma,Arial,sans-serif;color:#6f8a85;background:rgba(255,255,255,.8);padding:2px 8px;border-radius:10px">واجهة v3 · تدعم روابط الأعذار</div>
 <div id="ld">⏳ جارٍ تحميل النظام...</div>
 <iframe id="f" allow="clipboard-write; fullscreen"></iframe>
 <script>
 var EXEC = 'https://script.google.com/macros/s/AKfycbzAQiE99m-S0q9FSTuDQNAEZ2jygRU1sq1vwFVlnuI_ybNa-_LiB9AJtAUce0LNoqGnDg/exec';
 var f = document.getElementById('f'), nb = document.getElementById('nb'), lastSrc = null;
 f.onload = function () { var l = document.getElementById('ld'); if (l) l.remove(); };
-f.src = EXEC;
+var Q = location.search || '', PAR = /[?&]t=/.test(Q);
+f.src = EXEC + Q;
+if (PAR) { document.title = 'إفادة ولي أمر الطالب'; var wv0 = document.getElementById('wv'); if (wv0) wv0.remove(); }
 function perm() { return 'Notification' in window ? Notification.permission : 'unsupported'; }
 function tell() {
-  nb.style.display = perm() == 'default' ? 'block' : 'none';
+  nb.style.display = (!PAR && perm() == 'default') ? 'block' : 'none';
   if (lastSrc) { try { lastSrc.postMessage({ kind: 'wrapper', perm: perm() }, '*'); } catch (e) { } }
 }
 nb.onclick = function () { Notification.requestPermission().then(tell); };
 window.addEventListener('message', function (e) {
   var d = e.data || {}, o = String(e.origin || '');
-  if (!/(^|\.)(googleusercontent|google)\.com$/.test(o.replace(/^https?:\/\//, ''))) return;
+  var okO = /(^|\.)(googleusercontent|google)\.com$/.test(o.replace(/^https?:\/\//, ''));
   if (d.kind == 'hello') { lastSrc = e.source; tell(); }
-  if (d.kind == 'sys-alert' && perm() == 'granted') {
+  if (d.kind == 'sys-alert' && okO && perm() == 'granted') {
     var n = new Notification(String(d.title || ''), { body: String(d.body || ''), tag: String(d.tag || ''), dir: 'rtl', lang: 'ar' });
     n.onclick = function () { window.focus(); n.close(); };
   }
 });
 tell();
+setTimeout(function () { var v = document.getElementById('wv'); if (v) v.remove(); }, 6000);
 </script>
 </body>
 </html>
