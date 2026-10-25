@@ -38,7 +38,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:8px;mar
   <label>كود الدخول</label><input id="code" type="password" onkeydown="if(event.key=='Enter')login()">
   <p id="er" style="color:#c0392b;text-align:center;min-height:22px"></p>
   <button class="btn" onclick="login()">دخول</button>
-  <p style="text-align:center;color:#9ab;font-size:11px;margin:10px 0 0">إصدار الماسح: s21-7</p>
+  <p style="text-align:center;color:#9ab;font-size:11px;margin:10px 0 0">إصدار الماسح: s21-8</p>
 </div>
 
 <div id="ap" class="hide">
@@ -106,7 +106,7 @@ async function boot() {
   let why2 = '';
   if (API && RT) { try { const r = await api({ a: 'who', rt: RT }); if (!r.err) return show(r); why2 = errTxt(r.err) } catch (e) { why2 = 'تعذّر الاتصال بالنظام' } }
   else if (!API) why2 = 'لم يصل رابط النظام'; else why2 = 'لم تصل جلسة الدخول من النظام (' + (window.HINFO || '') + ')';
-  $('lg').classList.remove('hide'); if (why2) $('er').textContent = 'الدخول التلقائي لم يعمل [s21-7]: ' + why2;
+  $('lg').classList.remove('hide'); if (why2) $('er').textContent = 'الدخول التلقائي لم يعمل [s21-8]: ' + why2;
 }
 let SL = [], DONE = {};
 const nrm = s => String(s).replace(/[\u064B-\u0652ـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').toLowerCase();
@@ -121,8 +121,8 @@ async function del(id) {
   try {
     const r = await api({ a: 'undo', rt: RT, id: id, date: today() });
     if (r.err) { if (/انتهت الجلسة/.test(r.err)) { banner('err', 'انتهت الجلسة، سجّل الدخول من جديد'); return logout() } return banner('err', esc(errTxt(r.err))) }
-    TD = TD.filter(z => z.id != id); delete DONE[id]; SEEN[id] = Date.now() + 9000; const st = SL.find(z => z.id == id); if (st && st.lc > 0) st.lc--;
-    drawLs(); banner('warn', '🗑️ حُذف تسجيل التأخر<br>' + esc(x.name));
+    SEEN[id] = Date.now() + 9000; await loadSt();
+    if (TD.some(z => z.id == id)) banner('err', '⚠️ ما زال الطالب مسجَّلاً في السجل بعد الحذف<br>' + esc(x.name) + '<br>أعد المحاولة أو راجع شيت السجل'); else banner('warn', '🗑️ حُذف تسجيل التأخر<br>' + esc(x.name) + (r.n > 1 ? '<br>(حُذف ' + r.n + ' تسجيلات مكررة)' : ''));
   } catch (e) { banner('err', esc(why(e))) } finally { DELB = false }
 }
 async function loadSt() { try { const r = await api({ a: 'students', rt: RT }); if (r.err) return; SL = r.students; DONE = {}; TD = r.today.slice(); r.today.forEach(x => DONE[x.id] = x.time); drawLs() } catch (e) { } }
@@ -168,7 +168,7 @@ async function mark(id, force) {
   let r; try { r = await api({ a: 'scan', rt: RT, id: id, force: !!force, date: today(), hijri: hijri(new Date()) }) } catch (e) { return banner('err', esc(why(e))) }
   if (r.err) { if (/انتهت الجلسة/.test(r.err)) { banner('err', 'انتهت الجلسة، سجّل الدخول من جديد'); return logout() } return banner('err', esc(errTxt(r.err))) }
   if (r.absent) { ask(r); return 'absent' }
-  if (r.dup) { DONE[r.id] = r.time; return banner('warn', `${esc(r.name)}<br>سُجِّل متأخراً مسبقاً اليوم الساعة ${esc(r.time)}`) }
+  if (r.dup) { DONE[r.id] = r.time; return banner('warn', `${esc(r.name)}<br>سُجِّل متأخراً مسبقاً اليوم الساعة ${esc(r.time)}${r.by ? '<br>بواسطة: ' + esc(r.by) : ''}`) }
   DONE[r.id] = r.time; TD = TD.filter(z => z.id != r.id); TD.unshift({ id: r.id, name: r.name, cls: r.cls, time: r.time }); const st = SL.find(z => z.id == r.id); if (st) { st.lc = r.late; st.ab = 0 }
   banner(r.late >= 3 ? 'alert' : 'ok', `✔ ${esc(r.name)}<br>${esc(r.cls)} • ${esc(r.time)}<br>تأخره رقم ${r.late}${r.late >= 3 ? ' ⚠️' : ''}`);
   drawLs();
